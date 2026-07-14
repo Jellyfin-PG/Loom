@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/Loom.svg" alt="JellyEmu Logo" width="120" />
   <h1>Loom</h1>
-  <p>A plugin for jellyfin 10.11+ modify index.html in jellyfin, a thoughtful remake of file transformation plugin.</p>
+  <p>A plugin for modifying the frontend ui, and a thoughtful remake of file transformation plugin.</p>
 </div>
 
 <p align="center">

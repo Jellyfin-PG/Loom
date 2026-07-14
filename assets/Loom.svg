@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <style>
+      .weaving-pillar {
+        fill: none;
+        stroke: #FFFFFF;
+        stroke-width: 12;
+        stroke-linecap: round;
+        opacity: 0.35;
+      }
+      .weaving-thread {
+        fill: none;
+        stroke: #FFFFFF;
+        stroke-width: 12;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.95;
+      }
+      .weaving-thread-under {
+        fill: none;
+        stroke: #FFFFFF;
+        stroke-width: 12;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.2; /* Dims the thread where it passes underneath */
+      }
+    </style>
+  </defs>
+  <line class="weaving-pillar" x1="200" y1="120" x2="200" y2="392" />
+  <line class="weaving-pillar" x1="312" y1="120" x2="312" y2="392" />
+  <path class="weaving-thread" d="M 120 180 L 300 180" />
+  <path class="weaving-thread-under" d="M 300 180 L 324 180" />
+  <path class="weaving-thread" d="M 324 180 H 332 C 382 180, 382 256, 332 256" />
+  <path class="weaving-thread" d="M 332 256 L 212 256" />
+  <path class="weaving-thread-under" d="M 212 256 L 188 256" />
+  <path class="weaving-thread" d="M 188 256 H 180 C 130 256, 130 332, 180 332" />
+  <path class="weaving-thread" d="M 180 332 L 300 332" />
+  <path class="weaving-thread-under" d="M 300 332 L 324 332" />
+  <path class="weaving-thread" d="M 324 332 H 392" />
+</svg>

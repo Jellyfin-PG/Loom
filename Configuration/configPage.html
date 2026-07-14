@@ -1,0 +1,522 @@
+<div id="LoomConfigPage" data-role="page" class="page type-detail pluginConfigurationPage"
+    data-require="emby-button,emby-select,emby-input,tableStyles">
+    <style>
+        .loom-container {
+            padding: 32px 24px;
+            font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+            color: rgba(255, 255, 255, 0.87);
+            background-color: #121212;
+            min-height: 100vh;
+            border-radius: 4px;
+        }
+
+        .loom-header {
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding-bottom: 16px;
+        }
+
+        .loom-title {
+            font-size: 2.125rem;
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0 0 6px 0;
+            letter-spacing: 0.00735em;
+        }
+
+        .loom-subtitle {
+            font-size: 0.875rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+            letter-spacing: 0.01071em;
+        }
+
+        .loom-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .loom-card {
+            background-color: #1e1e1e;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+            border-radius: 4px;
+            box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+                0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+                0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            padding: 16px 24px;
+            transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+        }
+
+        .loom-card-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.08333em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 8px;
+        }
+
+        .loom-card-val {
+            font-size: 2rem;
+            font-weight: 400;
+            color: #ffffff;
+            letter-spacing: -0.01562em;
+        }
+
+        .loom-actions {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .loom-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-sizing: border-box;
+            background-color: transparent;
+            outline: 0;
+            border: 0;
+            margin: 0;
+            border-radius: 4px;
+            padding: 6px 16px;
+            font-size: 0.875rem;
+            min-width: 64px;
+            font-weight: 500;
+            line-height: 1.75;
+            letter-spacing: 0.02857em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                border-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+            gap: 8px;
+        }
+
+        .loom-btn-contained {
+            color: rgba(0, 0, 0, 0.87);
+            background-color: #90caf9;
+            box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2),
+                0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+                0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+        }
+
+        .loom-btn-contained:hover {
+            background-color: #42a5f5;
+            box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+                0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+                0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+        }
+
+        .loom-btn-outlined {
+            color: #90caf9;
+            border: 1px solid rgba(144, 202, 249, 0.5);
+        }
+
+        .loom-btn-outlined:hover {
+            border: 1px solid #90caf9;
+            background-color: rgba(144, 202, 249, 0.08);
+        }
+
+        .loom-table-container {
+            background-color: #1e1e1e;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+            border-radius: 4px;
+            box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+                0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+                0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            overflow-x: auto;
+        }
+
+        .loom-table {
+            width: 100%;
+            border-collapse: collapse;
+            display: table;
+        }
+
+        .loom-table th,
+        .loom-table td {
+            display: table-cell;
+            padding: 16px;
+            font-size: 0.875rem;
+            text-align: left;
+            font-weight: 400;
+            line-height: 1.43;
+            letter-spacing: 0.01071em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .loom-table th {
+            font-weight: 500;
+            line-height: 1.5rem;
+            color: #ffffff;
+            background-color: #242424;
+        }
+
+        .loom-table tr:hover td {
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        .loom-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 24px;
+            color: rgba(255, 255, 255, 0.87);
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            white-space: nowrap;
+            transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+            outline: 0;
+            text-decoration: none;
+            border: 0;
+            padding: 0 10px;
+            font-size: 0.8125rem;
+            font-weight: 400;
+            vertical-align: middle;
+            box-sizing: border-box;
+        }
+
+        .loom-chip-healthy {
+            background-color: rgba(46, 125, 50, 0.12);
+            color: rgb(165, 215, 167);
+            border: 1px solid rgba(46, 125, 50, 0.24);
+        }
+
+        .loom-chip-degraded {
+            background-color: rgba(237, 108, 2, 0.12);
+            color: rgb(255, 183, 77);
+            border: 1px solid rgba(237, 108, 2, 0.24);
+        }
+
+        .loom-chip-failed {
+            background-color: rgba(211, 47, 47, 0.12);
+            color: rgb(244, 67, 54);
+            border: 1px solid rgba(211, 47, 47, 0.24);
+        }
+
+        .loom-error-row td {
+            background-color: rgba(211, 47, 47, 0.02) !important;
+            padding-top: 4px;
+            padding-bottom: 16px;
+            border-top: none;
+        }
+
+        .loom-error-details {
+            background-color: #0c0c0c;
+            border-radius: 4px;
+            padding: 12px;
+            border-left: 3px solid rgb(244, 67, 54);
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.75rem;
+            color: rgb(244, 67, 54);
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        @keyframes loom-spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loom-toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 9999;
+        }
+
+        .loom-toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 320px;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1.43;
+            letter-spacing: 0.01071em;
+            box-shadow: 0px 3px 5px -1px rgba(0, 0, 0, 0.2),
+                0px 6px 10px 0px rgba(0, 0, 0, 0.14),
+                0px 1px 18px 0px rgba(0, 0, 0, 0.12);
+            transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, transform 225ms cubic-bezier(0.0, 0, 0.2, 1) 0ms;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .loom-toast-show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .loom-toast-success {
+            background-color: rgb(46, 125, 50);
+            color: #fff;
+        }
+
+        .loom-toast-error {
+            background-color: rgb(211, 47, 47);
+            color: #fff;
+        }
+
+        .loom-toast-info {
+            background-color: rgb(1, 67, 97);
+            color: rgb(225, 245, 254);
+        }
+    </style>
+
+    <div class="content-primary loom-container">
+        <div class="loom-header">
+            <h1 class="loom-title">Loom</h1>
+            <p class="loom-subtitle">Monitor and manage server-side file transformations served in-memory.</p>
+        </div>
+
+        <div class="loom-stats">
+            <div class="loom-card">
+                <div class="loom-card-title">Total Active Rules</div>
+                <div id="statTotal" class="loom-card-val">0</div>
+            </div>
+            <div class="loom-card">
+                <div class="loom-card-title">Healthy</div>
+                <div id="statHealthy" class="loom-card-val" style="color: rgb(165, 215, 167);">0</div>
+            </div>
+            <div class="loom-card">
+                <div class="loom-card-title">Issues Detected</div>
+                <div id="statIssues" class="loom-card-val" style="color: rgb(244, 67, 54);">0</div>
+            </div>
+        </div>
+
+        <div class="loom-actions">
+            <button id="btnRefresh" class="loom-btn loom-btn-outlined">
+                <span class="material-icons" style="font-size: 1.2rem;">refresh</span> Refresh Status
+            </button>
+            <button id="btnInvalidate" class="loom-btn loom-btn-contained">
+                <span class="material-icons" style="font-size: 1.2rem;">cleaning_services</span> Invalidate Caches
+            </button>
+        </div>
+
+        <div class="loom-table-container">
+            <table class="loom-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%">Plugin & Id</th>
+                        <th style="width: 35%">Target File / Pattern</th>
+                        <th style="width: 10%">Priority</th>
+                        <th style="width: 15%">Last Applied</th>
+                        <th style="width: 10%">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="loomRegistryBody">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: rgba(255, 255, 255, 0.6); padding: 48px;">
+                            Loading registered transformations...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        (function () {
+            var page = document.querySelector('#LoomConfigPage');
+
+            function loadTransformations() {
+                var apiClient = ApiClient;
+                var url = apiClient.getUrl("Loom/v1/transformations");
+
+                apiClient.getJSON(url).then(function (data) {
+                    populateTable(data);
+                }).catch(function (err) {
+                    console.error("Failed to load transformations", err);
+                    var tbody = page.querySelector('#loomRegistryBody');
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: rgb(244, 67, 54); padding: 48px;">Failed to fetch transformations from server API. Please ensure the plugin is loaded correctly.</td></tr>';
+                });
+            }
+
+            function populateTable(transformations) {
+                var tbody = page.querySelector('#loomRegistryBody');
+                var statTotal = page.querySelector('#statTotal');
+                var statHealthy = page.querySelector('#statHealthy');
+                var statIssues = page.querySelector('#statIssues');
+
+                if (!transformations || transformations.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: rgba(255, 255, 255, 0.6); padding: 48px;">No transformations currently registered.</td></tr>';
+                    statTotal.innerText = '0';
+                    statHealthy.innerText = '0';
+                    statIssues.innerText = '0';
+                    return;
+                }
+
+                var html = '';
+                var healthyCount = 0;
+                var issueCount = 0;
+
+                transformations.forEach(function (item) {
+                    var statusClass = 'loom-chip-healthy';
+                    var statusText = 'Healthy';
+
+                    var itemStatus = item.status || item.Status || 'Healthy';
+                    var itemLastAppliedAt = item.lastAppliedAt || item.LastAppliedAt;
+                    var itemFileNamePattern = item.fileNamePattern || item.FileNamePattern;
+                    var itemTargetFilePath = item.targetFilePath || item.TargetFilePath;
+                    var itemPluginId = item.pluginId || item.PluginId || '';
+                    var itemTransformationName = item.transformationName || item.TransformationName || '';
+                    var itemPluginVersion = item.pluginVersion || item.PluginVersion || '';
+                    var itemPriority = item.priority !== undefined ? item.priority : item.Priority;
+                    var itemLastError = item.lastError || item.LastError;
+
+                    if (itemStatus === 'Healthy') {
+                        healthyCount++;
+                    } else {
+                        issueCount++;
+                        if (itemStatus === 'Failed') {
+                            statusClass = 'loom-chip-failed';
+                            statusText = 'Failed';
+                        } else {
+                            statusClass = 'loom-chip-degraded';
+                            statusText = 'Degraded';
+                        }
+                    }
+
+                    var lastAppliedStr = itemLastAppliedAt ? new Date(itemLastAppliedAt).toLocaleTimeString() : 'Never';
+                    var targetLabel = itemFileNamePattern ? 'Regex: ' + itemFileNamePattern : itemTargetFilePath;
+
+                    html += '<tr class="loom-row">';
+                    html += '<td>';
+                    html += '<div style="font-weight: 500; color: #ffffff;">' + escapeHtml(itemPluginId) + '</div>';
+                    html += '<div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.5); margin-top: 2px;">' + escapeHtml(itemTransformationName) + ' (v' + escapeHtml(itemPluginVersion) + ')</div>';
+                    html += '</td>';
+                    html += '<td style="color: rgba(255, 255, 255, 0.7); font-family: monospace; font-size: 0.8rem;">' + escapeHtml(targetLabel) + '</td>';
+                    html += '<td>' + (itemPriority !== undefined ? itemPriority : '') + '</td>';
+                    html += '<td style="color: rgba(255, 255, 255, 0.6);">' + lastAppliedStr + '</td>';
+                    html += '<td><span class="loom-chip ' + statusClass + '">' + statusText + '</span></td>';
+                    html += '</tr>';
+
+                    if (itemLastError) {
+                        html += '<tr class="loom-error-row">';
+                        html += '<td colspan="5">';
+                        html += '<pre class="loom-error-details">' + escapeHtml(itemLastError) + '</pre>';
+                        html += '</td>';
+                        html += '</tr>';
+                    }
+                });
+
+                tbody.innerHTML = html;
+                statTotal.innerText = transformations.length.toString();
+                statHealthy.innerText = healthyCount.toString();
+                statIssues.innerText = issueCount.toString();
+            }
+
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            function showToast(message, severity) {
+                severity = severity || 'info';
+                var container = document.querySelector('#LoomToastContainer');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'LoomToastContainer';
+                    container.className = 'loom-toast-container';
+                    document.body.appendChild(container);
+                }
+
+                var toast = document.createElement('div');
+                toast.className = 'loom-toast loom-toast-' + severity;
+
+                var icon = 'info';
+                if (severity === 'success') icon = 'check_circle';
+                if (severity === 'error') icon = 'error';
+
+                toast.innerHTML = '<span class="material-icons" style="font-size: 1.25rem;">' + icon + '</span>' +
+                    '<div style="flex-grow: 1;">' + escapeHtml(message) + '</div>';
+
+                container.appendChild(toast);
+
+                toast.offsetHeight;
+
+                toast.classList.add('loom-toast-show');
+
+                setTimeout(function () {
+                    toast.classList.remove('loom-toast-show');
+                    setTimeout(function () {
+                        toast.remove();
+                    }, 250);
+                }, 3000);
+            }
+
+            page.querySelector('#btnRefresh').addEventListener('click', function (e) {
+                e.preventDefault();
+                var btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons" style="font-size: 1.2rem; animation: loom-spin 1s linear infinite;">sync</span> Refreshing...';
+
+                var apiClient = ApiClient;
+                var url = apiClient.getUrl("Loom/v1/transformations");
+
+                apiClient.getJSON(url).then(function (data) {
+                    populateTable(data);
+                    showToast("Status refreshed successfully!", "success");
+                }).catch(function (err) {
+                    console.error("Failed to load transformations", err);
+                    var tbody = page.querySelector('#loomRegistryBody');
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: rgb(244, 67, 54); padding: 48px;">Failed to fetch transformations from server API. Please ensure the plugin is loaded correctly.</td></tr>';
+                    showToast("Failed to refresh status.", "error");
+                }).finally(function () {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons" style="font-size: 1.2rem;">refresh</span> Refresh Status';
+                });
+            });
+
+            page.querySelector('#btnInvalidate').addEventListener('click', function (e) {
+                e.preventDefault();
+                var btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-icons" style="font-size: 1.2rem; animation: loom-spin 1s linear infinite;">sync</span> Invalidating...';
+
+                var apiClient = ApiClient;
+                var url = apiClient.getUrl("Loom/v1/cache/invalidate");
+
+                apiClient.ajax({
+                    type: 'POST',
+                    url: url
+                }).then(function () {
+                    showToast("File caches invalidated successfully!", "success");
+                    loadTransformations();
+                }).catch(function (err) {
+                    console.error("Failed to invalidate cache", err);
+                    showToast("Failed to invalidate cache.", "error");
+                }).finally(function () {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-icons" style="font-size: 1.2rem;">cleaning_services</span> Invalidate Caches';
+                });
+            });
+
+            page.addEventListener('pageshow', function () {
+                loadTransformations();
+            });
+        })();
+    </script>
+</div>

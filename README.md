@@ -8,11 +8,9 @@
   <a href="https://github.com/Jellyfin-PG/Loom/actions">
     <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" />
   </a>
-
   <a href="https://github.com/Jellyfin-PG/Loom/releases">
     <img src="https://img.shields.io/github/downloads/Jellyfin-PG/Loom/total?label=downloads" />
   </a>
-  
   <a href="https://discord.gg/v7P9CAvCKZ">
     <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" />
   </a>

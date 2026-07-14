@@ -9,3 +9,16 @@
     <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" />
   </a>
 </p>
+
+---
+
+## Screenshots
+
+<p align="center">
+  <a href="assets/Screenshot.png">
+    <img src="assets/screen01.png" width="45%" alt="JellyCMS page builder" />
+  </a>
+</p>
+<p align="center">
+  <em>Click on an image to view it full size.</em>
+</p>

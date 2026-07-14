@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/Loom.svg" alt="JellyEmu Logo" width="120" />
+  <img src="assets/Loom.svg" alt="Loom Logo" width="120" />
   <h1>Loom</h1>
   <p>A plugin for modifying the frontend ui, and a thoughtful remake of file transformation plugin.</p>
 </div>

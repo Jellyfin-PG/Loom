@@ -16,7 +16,7 @@
 
 <p align="center">
   <a href="assets/Screenshot.png">
-    <img src="assets/screen01.png" width="45%" alt="JellyCMS page builder" />
+    <img src="assets/Screenshot.png" width="45%" alt="Loom Dashboard" />
   </a>
 </p>
 <p align="center">

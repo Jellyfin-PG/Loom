@@ -10,6 +10,8 @@
   </a>
 </p>
 
+---
+
 ## Screenshots
 
 <p align="center">

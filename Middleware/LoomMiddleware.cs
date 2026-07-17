@@ -134,7 +134,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
 
             foreach (var entry in list)
             {
-                if (entry.FileNamePattern != null)
+                if (!string.IsNullOrEmpty(entry.FileNamePattern))
                 {
                     try
                     {

@@ -71,7 +71,7 @@ namespace Jellyfin.Plugin.Loom.Services
                 100,
                 transformDelegate)
             {
-                FileNamePattern = fileNamePattern
+                FileNamePattern = string.IsNullOrEmpty(fileNamePattern) ? null : fileNamePattern
             };
             
             _registrar.Register(entry);
@@ -106,7 +106,7 @@ namespace Jellyfin.Plugin.Loom.Services
                 100,
                 transformDelegate)
             {
-                FileNamePattern = fileNamePattern
+                FileNamePattern = string.IsNullOrEmpty(fileNamePattern) ? null : fileNamePattern
             };
             
             _registrar.Update(entry);

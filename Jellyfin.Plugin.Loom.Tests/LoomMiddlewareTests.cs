@@ -196,5 +196,45 @@ namespace Jellyfin.Plugin.Loom.Tests
             Assert.Equal(LoomStatus.Degraded, entryB.Status);
             Assert.NotNull(entryB.LastError);
         }
+
+        [Fact]
+        public async Task InvokeAsync_EmptyFileNamePattern_ShouldNotMatchEverything()
+        {
+            var registrar = new LoomRegistrar();
+            var appPaths = new TestAppPaths(_tempWebDir);
+            var logger = new TestLogger<LoomMiddleware>();
+            
+            var startedSource = new CancellationTokenSource();
+            var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
+            var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
+
+            var key = new LoomKey("TestPlugin", "RuleEmptyPattern");
+            var entry = new LoomEntry(key, "1.0", "index.html", 100, ctx => Task.FromResult(ctx.Content.Replace("Original", "Transformed")))
+            {
+                FileNamePattern = ""
+            };
+            registrar.Register(entry);
+
+            startedSource.Cancel();
+
+            bool nextCalled = false;
+            RequestDelegate next = ctx =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            };
+
+            var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
+            
+            var mainJsPath = Path.Combine(_tempWebDir, "main.js");
+            File.WriteAllText(mainJsPath, "console.log('original js');");
+            
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Path = "/web/main.js";
+
+            await middleware.InvokeAsync(httpContext);
+
+            Assert.True(nextCalled);
+        }
     }
 }

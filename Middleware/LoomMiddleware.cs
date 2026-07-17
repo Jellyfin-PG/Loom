@@ -138,8 +138,14 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 {
                     try
                     {
-                        if (Regex.IsMatch(relativePath, entry.FileNamePattern, RegexOptions.IgnoreCase) ||
-                            Regex.IsMatch(requestPath, entry.FileNamePattern, RegexOptions.IgnoreCase))
+                        var pattern = entry.FileNamePattern;
+                        if (!pattern.StartsWith("^") && !pattern.EndsWith("$") && !pattern.Contains("*") && !pattern.Contains("/") && !pattern.Contains("\\"))
+                        {
+                            pattern = $"(^|/){Regex.Escape(pattern)}$";
+                        }
+
+                        if (Regex.IsMatch(relativePath, pattern, RegexOptions.IgnoreCase) ||
+                            Regex.IsMatch(requestPath, pattern, RegexOptions.IgnoreCase))
                         {
                             matches.Add(entry);
                         }
@@ -254,7 +260,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
 
             if (string.IsNullOrEmpty(requestPath) || requestPath == "/")
             {
-                return "index.html";
+                return null;
             }
             if (requestPath.StartsWith("/"))
             {

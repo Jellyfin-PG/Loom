@@ -236,5 +236,45 @@ namespace Jellyfin.Plugin.Loom.Tests
 
             Assert.True(nextCalled);
         }
+
+        [Fact]
+        public async Task InvokeAsync_SubstringFileNamePattern_ShouldNotMatchPartially()
+        {
+            var registrar = new LoomRegistrar();
+            var appPaths = new TestAppPaths(_tempWebDir);
+            var logger = new TestLogger<LoomMiddleware>();
+            
+            var startedSource = new CancellationTokenSource();
+            var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
+            var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
+
+            var key = new LoomKey("TestPlugin", "RuleIndexHtml");
+            var entry = new LoomEntry(key, "1.0", "index.html", 100, ctx => Task.FromResult(ctx.Content.Replace("Original", "Transformed")))
+            {
+                FileNamePattern = "index.html"
+            };
+            registrar.Register(entry);
+
+            startedSource.Cancel();
+
+            bool nextCalled = false;
+            RequestDelegate next = ctx =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            };
+
+            var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
+            
+            var chunkJsPath = Path.Combine(_tempWebDir, "session-login-index-html.chunk.js");
+            File.WriteAllText(chunkJsPath, "console.log('original chunk');");
+            
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Path = "/web/session-login-index-html.chunk.js";
+
+            await middleware.InvokeAsync(httpContext);
+
+            Assert.True(nextCalled);
+        }
     }
 }

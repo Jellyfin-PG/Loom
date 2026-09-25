@@ -4,6 +4,8 @@
   <p>A plugin for modifying the frontend ui, and a thoughtful remake of file transformation plugin.</p>
 </div>
 
+</br>
+
 <div align="center">
   <a href="https://jellyfin.org/">
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=10.11.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 10.11.x supported">

@@ -15,13 +15,13 @@
   </a>
   </br></br>
   <a href="https://github.com/Jellyfin-PG/Loom/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" alt="Build status">
+    <img src="https://img.shields.io/badge/Build-Status-2ea043?style=for-the-badge&logo=github&logoColor=white" height="28">
   </a>
   <a href="https://github.com/Jellyfin-PG/Loom/releases">
-    <img src="https://img.shields.io/github/downloads/Jellyfin-PG/Loom/total?label=downloads" alt="Downloads">
+    <img src="https://img.shields.io/badge/Releases-Download-8250df?style=for-the-badge&logo=github&logoColor=white" height="28">
   </a>
   <a href="https://discord.gg/v7P9CAvCKZ">
-    <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" alt="Discord">
+    <img src="https://img.shields.io/badge/Discord-Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="28">
   </a>
 </div>
 

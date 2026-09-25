@@ -6,12 +6,12 @@
 
 <div align="center">
   <p>
-    <h1>Jellyfin Support</h1>
+    <b>Jellyfin Support</b>
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=10.11.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 10.11.x supported">
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=12.x.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 12.x.x supported">
   </p>
   <p>
-    <h1>Links</h1>
+    <b>Links</b>
     <a href="https://github.com/Jellyfin-PG/Loom/actions">
       <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" />
     </a>

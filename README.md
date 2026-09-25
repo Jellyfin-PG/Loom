@@ -8,10 +8,10 @@
 
 <div align="center">
   <a href="https://jellyfin.org/">
-    <img src="https://img.shields.io/static/v1?label=Jellyfin&message=10.11.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 10.11.x supported">
+    <img src="https://img.shields.io/badge/Jellyfin%2010.11.x-Supported-00A4DC?style=for-the-badge&logo=jellyfin&logoColor=white&labelColor=1f2937" height="28">
   </a>
   <a href="https://jellyfin.org/">
-    <img src="https://img.shields.io/static/v1?label=Jellyfin&message=12.x.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 12.x.x supported">
+    <img src="https://img.shields.io/badge/Jellyfin%2012.x.x-Supported-00A4DC?style=for-the-badge&logo=jellyfin&logoColor=white&labelColor=1f2937" height="28">
   </a>
   </br></br>
   <a href="https://github.com/Jellyfin-PG/Loom/actions">

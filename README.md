@@ -1,18 +1,14 @@
-<hr>
-
 <div align="center">
 
-  <b>Jellyfin Support</b><br>
+  <b>Jellyfin Support</b>
   <a href="https://jellyfin.org/">
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=10.11.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 10.11.x supported">
   </a>
   <a href="https://jellyfin.org/">
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=12.x.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 12.x.x supported">
   </a>
-
-  <br><br>
-
-  <b>Important Links</b><br>
+  -
+  <b>Important Links</b>
   <a href="https://github.com/Jellyfin-PG/Loom/actions">
     <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" alt="Build status">
   </a>
@@ -22,7 +18,6 @@
   <a href="https://discord.gg/v7P9CAvCKZ">
     <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" alt="Discord">
   </a>
-
 </div>
 
 <div align="center">

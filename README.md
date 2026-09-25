@@ -5,23 +5,28 @@
 </div>
 
 <div align="center">
-  <p>
-    <b>Jellyfin Support</b>
+
+  <h3>Jellyfin Support</h3>
+
+  <a href="https://jellyfin.org/">
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=10.11.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 10.11.x supported">
+  </a>
+  <a href="https://jellyfin.org/">
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=12.x.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 12.x.x supported">
-  </p>
-  <p>
-    <b>Links</b>
-    <a href="https://github.com/Jellyfin-PG/Loom/actions">
-      <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" />
-    </a>
-    <a href="https://github.com/Jellyfin-PG/Loom/releases">
-      <img src="https://img.shields.io/github/downloads/Jellyfin-PG/Loom/total?label=downloads" />
-    </a>
-    <a href="https://discord.gg/v7P9CAvCKZ">
-      <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" />
-    </a>
-  </p>
+  </a>
+
+  <h3>Important Links</h3>
+
+  <a href="https://github.com/Jellyfin-PG/Loom/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" alt="Build status">
+  </a>
+  <a href="https://github.com/Jellyfin-PG/Loom/releases">
+    <img src="https://img.shields.io/github/downloads/Jellyfin-PG/Loom/total?label=downloads" alt="Downloads">
+  </a>
+  <a href="https://discord.gg/v7P9CAvCKZ">
+    <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" alt="Discord">
+  </a>
+
 </div>
 
 ---

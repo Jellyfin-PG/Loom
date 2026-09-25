@@ -4,21 +4,25 @@
   <p>A plugin for modifying the frontend ui, and a thoughtful remake of file transformation plugin.</p>
 </div>
 
-<p align="center">
+<div align="center">
   <p>
+    <h1>Jellyfin Support</h1>
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=10.11.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 10.11.x supported">
     <img src="https://img.shields.io/static/v1?label=Jellyfin&message=12.x.x%20Supported&color=00A4DC&logo=jellyfin&logoColor=white" alt="Jellyfin 12.x.x supported">
   </p>
-  <a href="https://github.com/Jellyfin-PG/Loom/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" />
-  </a>
-  <a href="https://github.com/Jellyfin-PG/Loom/releases">
-    <img src="https://img.shields.io/github/downloads/Jellyfin-PG/Loom/total?label=downloads" />
-  </a>
-  <a href="https://discord.gg/v7P9CAvCKZ">
-    <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" />
-  </a>
-</p>
+  <p>
+    <h1>Links</h1>
+    <a href="https://github.com/Jellyfin-PG/Loom/actions">
+      <img src="https://img.shields.io/github/actions/workflow/status/Jellyfin-PG/Loom/release.yml" />
+    </a>
+    <a href="https://github.com/Jellyfin-PG/Loom/releases">
+      <img src="https://img.shields.io/github/downloads/Jellyfin-PG/Loom/total?label=downloads" />
+    </a>
+    <a href="https://discord.gg/v7P9CAvCKZ">
+      <img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white" />
+    </a>
+  </p>
+</div>
 
 ---
 

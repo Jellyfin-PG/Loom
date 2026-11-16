@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.Loom
     public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public static Plugin? Instance { get; private set; }
-        
+
         public IServiceProvider? ServiceProvider { get; internal set; }
 
         public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
@@ -25,7 +25,7 @@ namespace Jellyfin.Plugin.Loom
         }
 
         public override string Name => "Loom";
-        
+
         public override Guid Id => Guid.Parse("3f8c8d8b-5a6b-4c28-98e6-e575a7bc2cd4");
 
         public IEnumerable<PluginPageInfo> GetPages()

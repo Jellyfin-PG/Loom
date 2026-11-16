@@ -14,7 +14,7 @@ namespace Jellyfin.Plugin.Loom
             {
                 throw new InvalidOperationException("Loom plugin service provider is not initialized.");
             }
-            
+
             var writeService = plugin.ServiceProvider.GetRequiredService<ILoomWriteService>();
             writeService.Register(payload);
         }
@@ -31,7 +31,7 @@ namespace Jellyfin.Plugin.Loom
             {
                 throw new InvalidOperationException("Loom plugin service provider is not initialized.");
             }
-            
+
             var writeService = plugin.ServiceProvider.GetRequiredService<ILoomWriteService>();
             writeService.Update(payload);
         }
@@ -43,7 +43,7 @@ namespace Jellyfin.Plugin.Loom
             {
                 return;
             }
-            
+
             var registrar = plugin.ServiceProvider.GetRequiredService<Interfaces.ILoomRegistrar>();
             var target = System.Linq.Enumerable.FirstOrDefault(registrar.List(), e => e.Key.TransformationName == id.ToString());
             if (target != null)

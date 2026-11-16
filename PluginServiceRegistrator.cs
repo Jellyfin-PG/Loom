@@ -17,7 +17,7 @@ namespace Jellyfin.Plugin.Loom
             serviceCollection.AddSingleton<ILoomWriteService, LoomWriteService>();
             serviceCollection.AddTransient<IStartupFilter, LoomStartupFilter>();
             serviceCollection.AddSingleton<StartupBarrier>();
-            
+
             serviceCollection.AddHostedService<LoomPluginInitializer>();
         }
     }

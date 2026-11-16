@@ -1,0 +1,30 @@
+# Top-most EditorConfig file
+root = true
+
+# Standard settings for all files
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = unset
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# C# source files
+[*.cs]
+indent_style = space
+indent_size = 4
+
+# XML project files
+[*.{csproj,props,targets,xml}]
+indent_style = space
+indent_size = 2
+
+# JSON & YAML configuration files
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown documentation (preserve trailing spaces used for line breaks)
+[*.md]
+trim_trailing_whitespace = false

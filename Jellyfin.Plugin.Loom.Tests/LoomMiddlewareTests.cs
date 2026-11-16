@@ -61,8 +61,8 @@ namespace Jellyfin.Plugin.Loom.Tests
             public string UserConfigurationDirectoryPath => string.Empty;
             public string DefaultInternalMetadataPath => string.Empty;
             public string ArtistsPath => string.Empty;
-            public void MakeSanityCheckOrThrow() {}
-            public void CreateAndCheckMarker(string a, string b, bool c) {}
+            public void MakeSanityCheckOrThrow() { }
+            public void CreateAndCheckMarker(string a, string b, bool c) { }
             public string ProgramSystemPath => string.Empty;
             public string DataPath => string.Empty;
             public string ImageCachePath => string.Empty;
@@ -86,7 +86,7 @@ namespace Jellyfin.Plugin.Loom.Tests
         {
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
             public bool IsEnabled(LogLevel logLevel) => true;
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {}
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
         }
 
         [Fact]
@@ -95,7 +95,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             var registrar = new LoomRegistrar();
             var appPaths = new TestAppPaths(_tempWebDir);
             var logger = new TestLogger<LoomMiddleware>();
-            
+
             var startedSource = new CancellationTokenSource();
             var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
             var barrierLogger = new TestLogger<StartupBarrier>();
@@ -110,7 +110,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             };
 
             var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
-            
+
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Path = "/web/index.html";
 
@@ -125,11 +125,11 @@ namespace Jellyfin.Plugin.Loom.Tests
             var registrar = new LoomRegistrar();
             var appPaths = new TestAppPaths(_tempWebDir);
             var logger = new TestLogger<LoomMiddleware>();
-            
+
             var startedSource = new CancellationTokenSource();
             var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
             var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
-            
+
             var key = new LoomKey("TestPlugin", "Rule1");
             var entry = new LoomEntry(key, "1.0", "index.html", 100, ctx => Task.FromResult(ctx.Content.Replace("Original", "Transformed")));
             registrar.Register(entry);
@@ -144,7 +144,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             };
 
             var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
-            
+
             var httpContext = new DefaultHttpContext();
             var responseBody = new MemoryStream();
             httpContext.Response.Body = responseBody;
@@ -166,14 +166,14 @@ namespace Jellyfin.Plugin.Loom.Tests
         {
             var registrar = new LoomRegistrar();
             var appPaths = new TestAppPaths(_tempWebDir);
-            
+
             var startedSource = new CancellationTokenSource();
             var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
             var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
 
             var keyA = new LoomKey("PluginA", "RuleA");
             var entryA = new LoomEntry(keyA, "1.0", "index.html", 50, ctx => Task.FromResult(ctx.Content.Replace("Original", "A")));
-            
+
             var keyB = new LoomKey("PluginB", "RuleB");
             var entryB = new LoomEntry(keyB, "1.0", "index.html", 100, ctx => throw new Exception("Simulation Error"));
 
@@ -183,7 +183,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             startedSource.Cancel();
 
             var middleware = new LoomMiddleware(ctx => Task.CompletedTask, registrar, appPaths, new TestLogger<LoomMiddleware>(), barrier);
-            
+
             var httpContext = new DefaultHttpContext();
             var responseBody = new MemoryStream();
             httpContext.Response.Body = responseBody;
@@ -203,7 +203,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             var registrar = new LoomRegistrar();
             var appPaths = new TestAppPaths(_tempWebDir);
             var logger = new TestLogger<LoomMiddleware>();
-            
+
             var startedSource = new CancellationTokenSource();
             var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
             var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
@@ -225,10 +225,10 @@ namespace Jellyfin.Plugin.Loom.Tests
             };
 
             var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
-            
+
             var mainJsPath = Path.Combine(_tempWebDir, "main.js");
             File.WriteAllText(mainJsPath, "console.log('original js');");
-            
+
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Path = "/web/main.js";
 
@@ -243,7 +243,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             var registrar = new LoomRegistrar();
             var appPaths = new TestAppPaths(_tempWebDir);
             var logger = new TestLogger<LoomMiddleware>();
-            
+
             var startedSource = new CancellationTokenSource();
             var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
             var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
@@ -265,10 +265,10 @@ namespace Jellyfin.Plugin.Loom.Tests
             };
 
             var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
-            
+
             var chunkJsPath = Path.Combine(_tempWebDir, "session-login-index-html.chunk.js");
             File.WriteAllText(chunkJsPath, "console.log('original chunk');");
-            
+
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Path = "/web/session-login-index-html.chunk.js";
 

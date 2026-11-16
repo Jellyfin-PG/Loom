@@ -10,7 +10,7 @@ namespace Jellyfin.Plugin.Loom.Services
     public class LoomRegistrar : ILoomRegistrar
     {
         private readonly ConcurrentDictionary<LoomKey, LoomEntry> _registry = new();
-        
+
         public event Action<string>? OnRegistryChanged;
 
         public void Register(LoomEntry entry)
@@ -43,7 +43,7 @@ namespace Jellyfin.Plugin.Loom.Services
             {
                 return _registry.Values.ToList();
             }
-            
+
             var normalizedTarget = NormalizePath(targetFilePath);
             return _registry.Values
                 .Where(e => NormalizePath(e.TargetFilePath) == normalizedTarget)
@@ -65,10 +65,10 @@ namespace Jellyfin.Plugin.Loom.Services
             var config = Plugin.Instance?.Configuration;
             if (config != null)
             {
-                var over = config.PriorityOverrides.FirstOrDefault(o => 
+                var over = config.PriorityOverrides.FirstOrDefault(o =>
                     o.PluginId.Equals(entry.Key.PluginId, StringComparison.OrdinalIgnoreCase) &&
                     o.TransformationName.Equals(entry.Key.TransformationName, StringComparison.OrdinalIgnoreCase));
-                
+
                 if (over != null)
                 {
                     entry.Priority = over.Priority;

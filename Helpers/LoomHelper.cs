@@ -15,7 +15,7 @@ namespace Jellyfin.Plugin.Loom.Helpers
             {
                 var assembly = AppDomain.CurrentDomain.GetAssemblies()
                     .FirstOrDefault(a => a.FullName == assemblyName || a.GetName().Name == assemblyName);
-                    
+
                 if (assembly == null)
                 {
                     try
@@ -27,13 +27,13 @@ namespace Jellyfin.Plugin.Loom.Helpers
                         throw new InvalidOperationException($"Could not load assembly '{assemblyName}': {ex.Message}", ex);
                     }
                 }
-                
-                var type = assembly.GetType(className) 
+
+                var type = assembly.GetType(className)
                     ?? throw new InvalidOperationException($"Could not find type '{className}' in assembly '{assemblyName}'");
-                    
+
                 var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)
                     ?? throw new InvalidOperationException($"Could not find static method '{methodName}' in type '{className}'");
-                    
+
                 var parameters = method.GetParameters();
                 object?[] args;
                 if (parameters.Length == 0)
@@ -51,10 +51,10 @@ namespace Jellyfin.Plugin.Loom.Helpers
                     {
                         var paramInstance = Activator.CreateInstance(paramType)
                             ?? throw new InvalidOperationException($"Could not instantiate parameter type '{paramType.FullName}'");
-                            
+
                         var prop = paramType.GetProperty("Contents", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
                             ?? paramType.GetProperty("contents", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                            
+
                         if (prop != null && prop.CanWrite)
                         {
                             prop.SetValue(paramInstance, context.Content);
@@ -66,7 +66,7 @@ namespace Jellyfin.Plugin.Loom.Helpers
                 {
                     throw new InvalidOperationException($"Callback method '{methodName}' must accept 0 or 1 parameter");
                 }
-                
+
                 var invokeResult = method.Invoke(null, args);
                 if (invokeResult is Task<string> task)
                 {

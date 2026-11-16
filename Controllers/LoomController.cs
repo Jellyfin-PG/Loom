@@ -34,7 +34,7 @@ namespace Jellyfin.Plugin.Loom.Controllers
             }
 
             var key = new LoomKey(request.PluginId, request.TransformationName);
-            
+
             Func<LoomContext, Task<string>> transformDelegate;
             if (!string.IsNullOrEmpty(request.CallbackAssembly) &&
                 !string.IsNullOrEmpty(request.CallbackClass) &&
@@ -75,7 +75,7 @@ namespace Jellyfin.Plugin.Loom.Controllers
         public IActionResult Update(string pluginId, string name, [FromBody] RegisterLoomRequest request)
         {
             var key = new LoomKey(pluginId, name);
-            
+
             Func<LoomContext, Task<string>> transformDelegate;
             if (!string.IsNullOrEmpty(request.CallbackAssembly) &&
                 !string.IsNullOrEmpty(request.CallbackClass) &&

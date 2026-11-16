@@ -9,7 +9,7 @@ namespace Jellyfin.Plugin.Loom.Services
     public class LoomWriteService : ILoomWriteService
     {
         private readonly ILoomRegistrar _registrar;
-        
+
         public LoomWriteService(ILoomRegistrar registrar)
         {
             _registrar = registrar;
@@ -28,7 +28,7 @@ namespace Jellyfin.Plugin.Loom.Services
                 {
                     return idToken.ToObject<Guid>();
                 }
-                
+
                 if (Guid.TryParse(idToken.ToString(), out var parsedGuid))
                 {
                     return parsedGuid;
@@ -36,12 +36,12 @@ namespace Jellyfin.Plugin.Loom.Services
             }
             catch
             {
-                
+
             }
 
             return Guid.NewGuid();
         }
-        
+
         public void Register(JObject payload)
         {
             var id = ParseGuid(payload["id"]);
@@ -49,7 +49,7 @@ namespace Jellyfin.Plugin.Loom.Services
             var callbackAssembly = payload["callbackAssembly"]?.ToString() ?? string.Empty;
             var callbackClass = payload["callbackClass"]?.ToString() ?? string.Empty;
             var callbackMethod = payload["callbackMethod"]?.ToString() ?? string.Empty;
-            
+
             string targetFilePath = "index.html";
             if (!string.IsNullOrEmpty(fileNamePattern))
             {
@@ -60,10 +60,10 @@ namespace Jellyfin.Plugin.Loom.Services
             }
 
             var key = new LoomKey(callbackAssembly, id.ToString());
-            
+
             var transformDelegate = LoomHelper.CreateLoomCallback(
                 callbackAssembly, callbackClass, callbackMethod);
-                
+
             var entry = new LoomEntry(
                 key,
                 "1.0.0",
@@ -73,7 +73,7 @@ namespace Jellyfin.Plugin.Loom.Services
             {
                 FileNamePattern = string.IsNullOrEmpty(fileNamePattern) ? null : fileNamePattern
             };
-            
+
             _registrar.Register(entry);
         }
 
@@ -84,7 +84,7 @@ namespace Jellyfin.Plugin.Loom.Services
             var callbackAssembly = payload["callbackAssembly"]?.ToString() ?? string.Empty;
             var callbackClass = payload["callbackClass"]?.ToString() ?? string.Empty;
             var callbackMethod = payload["callbackMethod"]?.ToString() ?? string.Empty;
-            
+
             string targetFilePath = "index.html";
             if (!string.IsNullOrEmpty(fileNamePattern))
             {
@@ -95,10 +95,10 @@ namespace Jellyfin.Plugin.Loom.Services
             }
 
             var key = new LoomKey(callbackAssembly, id.ToString());
-            
+
             var transformDelegate = LoomHelper.CreateLoomCallback(
                 callbackAssembly, callbackClass, callbackMethod);
-                
+
             var entry = new LoomEntry(
                 key,
                 "1.0.0",
@@ -108,7 +108,7 @@ namespace Jellyfin.Plugin.Loom.Services
             {
                 FileNamePattern = string.IsNullOrEmpty(fileNamePattern) ? null : fileNamePattern
             };
-            
+
             _registrar.Update(entry);
         }
     }

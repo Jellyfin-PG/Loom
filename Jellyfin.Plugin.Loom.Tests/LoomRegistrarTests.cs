@@ -72,7 +72,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             var registrar = new LoomRegistrar();
             var entry1 = new LoomEntry(new LoomKey("P1", "T1"), "1.0", "index.html", 100, ctx => Task.FromResult(ctx.Content));
             var entry2 = new LoomEntry(new LoomKey("P2", "T2"), "1.0", "main.js", 100, ctx => Task.FromResult(ctx.Content));
-            
+
             registrar.Register(entry1);
             registrar.Register(entry2);
 
@@ -81,7 +81,7 @@ namespace Jellyfin.Plugin.Loom.Tests
 
             Assert.Single(indexList);
             Assert.Equal(entry1.Key, indexList.First().Key);
-            
+
             Assert.Single(mainList);
             Assert.Equal(entry2.Key, mainList.First().Key);
         }

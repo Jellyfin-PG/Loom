@@ -23,7 +23,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
         private readonly IServerApplicationPaths _appPaths;
         private readonly ILogger<LoomMiddleware> _logger;
         private readonly StartupBarrier _startupBarrier;
-        
+
         private readonly ConcurrentDictionary<string, RenderedFile> _cache = new();
         private readonly ConcurrentDictionary<string, RenderedFile> _lastKnownGood = new();
 
@@ -101,7 +101,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                     }
                 });
 
-                if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) && 
+                if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) &&
                     ifNoneMatch.ToString() == rendered.ETag)
                 {
                     context.Response.StatusCode = StatusCodes.Status304NotModified;
@@ -117,7 +117,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 context.Response.ContentType = contentType;
                 context.Response.Headers.ETag = rendered.ETag;
                 context.Response.ContentLength = rendered.Content.Length;
-                
+
                 await context.Response.Body.WriteAsync(rendered.Content);
             }
             catch (Exception ex)
@@ -152,7 +152,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Invalid regex pattern '{Pattern}' registered by plugin '{PluginId}'", 
+                        _logger.LogError(ex, "Invalid regex pattern '{Pattern}' registered by plugin '{PluginId}'",
                             entry.FileNamePattern, entry.Key.PluginId);
                     }
                 }
@@ -188,7 +188,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error applying Loom transformation '{Name}' from '{Plugin}' on '{Path}'", 
+                    _logger.LogError(ex, "Error applying Loom transformation '{Name}' from '{Plugin}' on '{Path}'",
                         entry.Key.TransformationName, entry.Key.PluginId, relativePath);
 
                     entry.LastFailedAt = DateTimeOffset.UtcNow;
@@ -201,7 +201,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
             etagBuilder.Append(File.GetLastWriteTimeUtc(physicalPath).Ticks);
             etagBuilder.Append('_');
             etagBuilder.Append(originalContent.Length);
-            
+
             foreach (var entry in sortedMatches)
             {
                 etagBuilder.Append('_');

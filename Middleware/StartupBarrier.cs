@@ -13,17 +13,17 @@ namespace Jellyfin.Plugin.Loom.Middleware
         public StartupBarrier(IHostApplicationLifetime lifetime, ILogger<StartupBarrier> logger)
         {
             _logger = logger;
-            
-            lifetime.ApplicationStarted.Register(() => 
+
+            lifetime.ApplicationStarted.Register(() =>
             {
                 _logger.LogInformation("Application has started. Loom startup barrier cleared.");
                 _tcs.TrySetResult(true);
             });
-            
+
             var config = Plugin.Instance?.Configuration;
             int timeoutSeconds = config?.StartupTimeoutSeconds ?? 10;
-            
-            Task.Delay(TimeSpan.FromSeconds(timeoutSeconds)).ContinueWith(_ => 
+
+            Task.Delay(TimeSpan.FromSeconds(timeoutSeconds)).ContinueWith(_ =>
             {
                 if (!_tcs.Task.IsCompleted)
                 {
@@ -32,7 +32,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 }
             });
         }
-        
+
         public Task WaitForStartupAsync() => _tcs.Task;
         public bool IsComplete => _tcs.Task.IsCompleted;
     }

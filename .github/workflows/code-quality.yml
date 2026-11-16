@@ -1,0 +1,89 @@
+name: Code Quality & CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'assets/**'
+      - '.vscode/**'
+      - '.gitignore'
+  pull_request:
+    branches:
+      - master
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'assets/**'
+      - '.vscode/**'
+      - '.gitignore'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  code-quality:
+    name: Code Quality & Format
+    runs-on: ubuntu-latest
+    # Skip code quality on Dependabot PRs to reduce action runs
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.actor != 'dependabot[bot]'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore Jellyfin.Plugin.Loom.csproj
+          dotnet restore Jellyfin.Plugin.Loom.Tests/Jellyfin.Plugin.Loom.Tests.csproj
+
+      - name: Verify code formatting
+        run: |
+          dotnet format Jellyfin.Plugin.Loom.csproj --verify-no-changes --verbosity normal
+          dotnet format Jellyfin.Plugin.Loom.Tests/Jellyfin.Plugin.Loom.Tests.csproj --verify-no-changes --verbosity normal
+
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    # Skip build & test on Dependabot PRs that only update GitHub Actions workflows
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      !contains(github.event.pull_request.labels.*.name, 'github-actions')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore Jellyfin.Plugin.Loom.csproj
+          dotnet restore Jellyfin.Plugin.Loom.Tests/Jellyfin.Plugin.Loom.Tests.csproj
+
+      - name: Build Plugin (Release)
+        run: dotnet build Jellyfin.Plugin.Loom.csproj --configuration Release --no-restore
+
+      - name: Build Tests (Release)
+        run: dotnet build Jellyfin.Plugin.Loom.Tests/Jellyfin.Plugin.Loom.Tests.csproj --configuration Release --no-restore
+
+      - name: Run Unit Tests
+        run: dotnet test Jellyfin.Plugin.Loom.Tests/Jellyfin.Plugin.Loom.Tests.csproj --configuration Release --no-build --verbosity normal

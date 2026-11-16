@@ -37,6 +37,9 @@ updates:
       nuget-dependencies:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "Jellyfin.*"
+        update-types: ["version-update:semver-major"]
 
   # Bundle and manage NuGet dependencies for Loom test suite
   - package-ecosystem: "nuget"
@@ -56,3 +59,6 @@ updates:
       test-dependencies:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "Jellyfin.*"
+        update-types: ["version-update:semver-major"]

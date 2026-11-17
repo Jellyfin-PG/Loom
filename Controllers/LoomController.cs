@@ -194,26 +194,30 @@ namespace Jellyfin.Plugin.Loom.Controllers
             var isComplete = _startupBarrier?.IsComplete ?? true;
             var timeout = config?.StartupTimeoutSeconds ?? 10;
 
-            return Ok(new
+            return Ok(new LoomDiagnosticsResult
             {
-                contractVersion = "1.0.0",
                 ContractVersion = "1.0.0",
-                isStartupComplete = isComplete,
                 IsStartupComplete = isComplete,
-                startupTimeoutSeconds = timeout,
                 StartupTimeoutSeconds = timeout,
-                totalRules = list.Count,
                 TotalRules = list.Count,
-                healthyRules = list.Count(e => e.Status == LoomStatus.Healthy),
                 HealthyRules = list.Count(e => e.Status == LoomStatus.Healthy),
-                degradedRules = list.Count(e => e.Status == LoomStatus.Degraded),
                 DegradedRules = list.Count(e => e.Status == LoomStatus.Degraded),
-                failedRules = list.Count(e => e.Status == LoomStatus.Failed),
                 FailedRules = list.Count(e => e.Status == LoomStatus.Failed),
-                serverTime = DateTimeOffset.UtcNow,
                 ServerTime = DateTimeOffset.UtcNow
             });
         }
+    }
+
+    public class LoomDiagnosticsResult
+    {
+        public string ContractVersion { get; set; } = "1.0.0";
+        public bool IsStartupComplete { get; set; }
+        public int StartupTimeoutSeconds { get; set; }
+        public int TotalRules { get; set; }
+        public int HealthyRules { get; set; }
+        public int DegradedRules { get; set; }
+        public int FailedRules { get; set; }
+        public DateTimeOffset ServerTime { get; set; }
     }
 
     public class RegisterLoomRequest

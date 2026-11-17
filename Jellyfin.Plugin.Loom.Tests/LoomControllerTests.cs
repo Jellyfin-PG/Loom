@@ -210,14 +210,15 @@ namespace Jellyfin.Plugin.Loom.Tests
 
             var result = controller.GetDiagnostics();
             var ok = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(ok.Value);
+            var diag = Assert.IsType<LoomDiagnosticsResult>(ok.Value);
+            Assert.True(diag.IsStartupComplete);
+            Assert.Equal("1.0.0", diag.ContractVersion);
+            Assert.Equal(1, diag.TotalRules);
+            Assert.Equal(1, diag.HealthyRules);
 
-            var propLower = ok.Value.GetType().GetProperty("isStartupComplete");
-            var propUpper = ok.Value.GetType().GetProperty("IsStartupComplete");
-            Assert.NotNull(propLower);
-            Assert.NotNull(propUpper);
-            Assert.True((bool)propLower.GetValue(ok.Value)!);
-            Assert.True((bool)propUpper.GetValue(ok.Value)!);
+            // Verify System.Text.Json serialization succeeds without ambiguous parameter binding exceptions
+            var json = System.Text.Json.JsonSerializer.Serialize(diag);
+            Assert.Contains("\"IsStartupComplete\":true", json);
         }
     }
 }

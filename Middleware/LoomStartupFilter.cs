@@ -13,6 +13,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 if (Plugin.Instance != null && Plugin.Instance.ServiceProvider == null)
                 {
                     Plugin.Instance.ServiceProvider = builder.ApplicationServices;
+                    LoomInterface.DrainPendingRegistrations();
                 }
 
                 builder.UseMiddleware<LoomMiddleware>();

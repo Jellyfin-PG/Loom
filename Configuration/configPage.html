@@ -299,15 +299,25 @@
                 <div class="loom-card-title">Issues Detected</div>
                 <div id="statIssues" class="loom-card-val" style="color: rgb(244, 67, 54);">0</div>
             </div>
+            <div class="loom-card">
+                <div class="loom-card-title">Startup Barrier</div>
+                <div id="statStartup" class="loom-card-val" style="font-size: 1.5rem; color: #90caf9;">Ready</div>
+            </div>
         </div>
 
-        <div class="loom-actions">
-            <button id="btnRefresh" class="loom-btn loom-btn-outlined">
-                <span class="material-icons" style="font-size: 1.2rem;">refresh</span> Refresh Status
-            </button>
-            <button id="btnInvalidate" class="loom-btn loom-btn-contained">
-                <span class="material-icons" style="font-size: 1.2rem;">cleaning_services</span> Invalidate Caches
-            </button>
+        <div class="loom-actions" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; gap: 16px;">
+                <button id="btnRefresh" class="loom-btn loom-btn-outlined">
+                    <span class="material-icons" style="font-size: 1.2rem;">refresh</span> Refresh Status
+                </button>
+                <button id="btnInvalidate" class="loom-btn loom-btn-contained">
+                    <span class="material-icons" style="font-size: 1.2rem;">cleaning_services</span> Invalidate Caches
+                </button>
+            </div>
+            <div>
+                <input id="loomSearchInput" type="text" placeholder="Filter rules..."
+                    style="background-color: #1e1e1e; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; padding: 7px 12px; color: #fff; font-size: 0.875rem; outline: none; width: 220px;" />
+            </div>
         </div>
 
         <div class="loom-table-container">
@@ -335,18 +345,63 @@
     <script type="text/javascript">
         (function () {
             var page = document.querySelector('#LoomConfigPage');
+            var currentTransformations = [];
+
+            function loadDiagnostics() {
+                var apiClient = ApiClient;
+                var url = apiClient.getUrl("Loom/v1/diagnostics");
+                apiClient.getJSON(url).then(function (data) {
+                    var statStartup = page.querySelector('#statStartup');
+                    var isComplete = data && (data.isStartupComplete !== undefined ? data.isStartupComplete : data.IsStartupComplete);
+                    if (isComplete) {
+                        statStartup.innerText = 'Cleared';
+                        statStartup.style.color = 'rgb(165, 215, 167)';
+                    } else {
+                        statStartup.innerText = 'Waiting';
+                        statStartup.style.color = 'rgb(255, 183, 77)';
+                    }
+                }).catch(function (err) {
+                    console.error("Failed to load diagnostics", err);
+                    var statStartup = page.querySelector('#statStartup');
+                    statStartup.innerText = 'Cleared';
+                    statStartup.style.color = 'rgb(165, 215, 167)';
+                });
+            }
 
             function loadTransformations() {
                 var apiClient = ApiClient;
                 var url = apiClient.getUrl("Loom/v1/transformations");
 
                 apiClient.getJSON(url).then(function (data) {
-                    populateTable(data);
+                    currentTransformations = data || [];
+                    applyFilter();
+                    loadDiagnostics();
                 }).catch(function (err) {
                     console.error("Failed to load transformations", err);
                     var tbody = page.querySelector('#loomRegistryBody');
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: rgb(244, 67, 54); padding: 48px;">Failed to fetch transformations from server API. Please ensure the plugin is loaded correctly.</td></tr>';
                 });
+            }
+
+            function applyFilter() {
+                var filterTerm = (page.querySelector('#loomSearchInput').value || '').trim().toLowerCase();
+                if (!filterTerm) {
+                    populateTable(currentTransformations);
+                    return;
+                }
+
+                var filtered = currentTransformations.filter(function (item) {
+                    var pluginId = (item.pluginId || item.PluginId || '').toLowerCase();
+                    var name = (item.transformationName || item.TransformationName || '').toLowerCase();
+                    var pattern = (item.fileNamePattern || item.FileNamePattern || '').toLowerCase();
+                    var target = (item.targetFilePath || item.TargetFilePath || '').toLowerCase();
+                    return pluginId.indexOf(filterTerm) >= 0 ||
+                        name.indexOf(filterTerm) >= 0 ||
+                        pattern.indexOf(filterTerm) >= 0 ||
+                        target.indexOf(filterTerm) >= 0;
+                });
+
+                populateTable(filtered);
             }
 
             function populateTable(transformations) {
@@ -512,6 +567,10 @@
                     btn.disabled = false;
                     btn.innerHTML = '<span class="material-icons" style="font-size: 1.2rem;">cleaning_services</span> Invalidate Caches';
                 });
+            });
+
+            page.querySelector('#loomSearchInput').addEventListener('input', function () {
+                applyFilter();
             });
 
             page.addEventListener('pageshow', function () {

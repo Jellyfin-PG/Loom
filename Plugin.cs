@@ -58,6 +58,7 @@ namespace Jellyfin.Plugin.Loom
             if (Plugin.Instance != null)
             {
                 Plugin.Instance.ServiceProvider = _serviceProvider;
+                LoomInterface.DrainPendingRegistrations();
             }
             return Task.CompletedTask;
         }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Jellyfin.Plugin.Loom.Interfaces;
 using Jellyfin.Plugin.Loom.Models;
 using Jellyfin.Plugin.Loom.Helpers;
+using Jellyfin.Plugin.Loom.Middleware;
 
 namespace Jellyfin.Plugin.Loom.Controllers
 {
@@ -17,10 +18,12 @@ namespace Jellyfin.Plugin.Loom.Controllers
     public class LoomController : ControllerBase
     {
         private readonly ILoomRegistrar _registrar;
+        private readonly StartupBarrier? _startupBarrier;
 
-        public LoomController(ILoomRegistrar registrar)
+        public LoomController(ILoomRegistrar registrar, StartupBarrier? startupBarrier = null)
         {
             _registrar = registrar;
+            _startupBarrier = startupBarrier;
         }
 
         [HttpPost("transformations")]
@@ -180,6 +183,36 @@ namespace Jellyfin.Plugin.Loom.Controllers
         public IActionResult GetVersion()
         {
             return Ok(new { ContractVersion = "1.0.0" });
+        }
+
+        [HttpGet("diagnostics")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetDiagnostics()
+        {
+            var list = _registrar.List();
+            var config = Plugin.Instance?.Configuration;
+            var isComplete = _startupBarrier?.IsComplete ?? true;
+            var timeout = config?.StartupTimeoutSeconds ?? 10;
+
+            return Ok(new
+            {
+                contractVersion = "1.0.0",
+                ContractVersion = "1.0.0",
+                isStartupComplete = isComplete,
+                IsStartupComplete = isComplete,
+                startupTimeoutSeconds = timeout,
+                StartupTimeoutSeconds = timeout,
+                totalRules = list.Count,
+                TotalRules = list.Count,
+                healthyRules = list.Count(e => e.Status == LoomStatus.Healthy),
+                HealthyRules = list.Count(e => e.Status == LoomStatus.Healthy),
+                degradedRules = list.Count(e => e.Status == LoomStatus.Degraded),
+                DegradedRules = list.Count(e => e.Status == LoomStatus.Degraded),
+                failedRules = list.Count(e => e.Status == LoomStatus.Failed),
+                FailedRules = list.Count(e => e.Status == LoomStatus.Failed),
+                serverTime = DateTimeOffset.UtcNow,
+                ServerTime = DateTimeOffset.UtcNow
+            });
         }
     }
 

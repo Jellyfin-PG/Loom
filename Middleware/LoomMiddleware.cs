@@ -24,8 +24,13 @@ namespace Jellyfin.Plugin.Loom.Middleware
         private readonly ILogger<LoomMiddleware> _logger;
         private readonly StartupBarrier _startupBarrier;
 
-        private readonly ConcurrentDictionary<string, RenderedFile> _cache = new();
-        private readonly ConcurrentDictionary<string, RenderedFile> _lastKnownGood = new();
+        private readonly ConcurrentDictionary<string, RenderedFile> _cache = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, RenderedFile> _lastKnownGood = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _compilationLocks = new(StringComparer.OrdinalIgnoreCase);
+
+        private static readonly TimeSpan DefaultRegexTimeout = TimeSpan.FromMilliseconds(100);
+
+        public int CachedFilesCount => _cache.Count;
 
         public LoomMiddleware(
             RequestDelegate next,
@@ -82,24 +87,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
 
             try
             {
-                var rendered = await _cache.GetOrAddAsync(relativePath, async path =>
-                {
-                    try
-                    {
-                        var buildResult = await BuildRenderedFileAsync(relativePath, physicalPath, matches);
-                        _lastKnownGood[relativePath] = buildResult;
-                        return buildResult;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to compile Loom transformation chain for '{Path}'. Attempting fallback.", relativePath);
-                        if (_lastKnownGood.TryGetValue(relativePath, out var lkg))
-                        {
-                            return lkg;
-                        }
-                        throw;
-                    }
-                });
+                var rendered = await GetOrBuildRenderedFileAsync(relativePath, physicalPath, matches).ConfigureAwait(false);
 
                 if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) &&
                     ifNoneMatch.ToString() == rendered.ETag)
@@ -127,6 +115,48 @@ namespace Jellyfin.Plugin.Loom.Middleware
             }
         }
 
+        private async Task<RenderedFile> GetOrBuildRenderedFileAsync(string relativePath, string physicalPath, List<LoomEntry> matches)
+        {
+            if (_cache.TryGetValue(relativePath, out var cached))
+            {
+                return cached;
+            }
+
+            var fileLock = _compilationLocks.GetOrAdd(relativePath, _ => new SemaphoreSlim(1, 1));
+            await fileLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (_cache.TryGetValue(relativePath, out cached))
+                {
+                    return cached;
+                }
+
+                try
+                {
+                    var buildResult = await BuildRenderedFileAsync(relativePath, physicalPath, matches).ConfigureAwait(false);
+                    _cache[relativePath] = buildResult;
+                    if (matches.All(m => m.Status == LoomStatus.Healthy))
+                    {
+                        _lastKnownGood[relativePath] = buildResult;
+                    }
+                    return buildResult;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to compile Loom transformation chain for '{Path}'. Attempting fallback.", relativePath);
+                    if (_lastKnownGood.TryGetValue(relativePath, out var lkg))
+                    {
+                        return lkg;
+                    }
+                    throw;
+                }
+            }
+            finally
+            {
+                fileLock.Release();
+            }
+        }
+
         private List<LoomEntry> FindMatchingTransformations(string relativePath, string requestPath)
         {
             var list = _registrar.List();
@@ -144,11 +174,16 @@ namespace Jellyfin.Plugin.Loom.Middleware
                             pattern = $"(^|/){Regex.Escape(pattern)}$";
                         }
 
-                        if (Regex.IsMatch(relativePath, pattern, RegexOptions.IgnoreCase) ||
-                            Regex.IsMatch(requestPath, pattern, RegexOptions.IgnoreCase))
+                        if (Regex.IsMatch(relativePath, pattern, RegexOptions.IgnoreCase, DefaultRegexTimeout) ||
+                            Regex.IsMatch(requestPath, pattern, RegexOptions.IgnoreCase, DefaultRegexTimeout))
                         {
                             matches.Add(entry);
                         }
+                    }
+                    catch (RegexMatchTimeoutException ex)
+                    {
+                        _logger.LogWarning(ex, "Regex evaluation timed out for pattern '{Pattern}' registered by '{PluginId}'",
+                            entry.FileNamePattern, entry.Key.PluginId);
                     }
                     catch (Exception ex)
                     {
@@ -174,6 +209,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
             var currentContent = originalContent;
 
             var sortedMatches = matches.OrderBy(m => m.Priority).ThenBy(m => m.RegisteredAt).ToList();
+            bool anyFailed = false;
 
             foreach (var entry in sortedMatches)
             {
@@ -194,7 +230,14 @@ namespace Jellyfin.Plugin.Loom.Middleware
                     entry.LastFailedAt = DateTimeOffset.UtcNow;
                     entry.LastError = ex.ToString();
                     entry.Status = LoomStatus.Degraded;
+                    anyFailed = true;
                 }
+            }
+
+            if (anyFailed && _lastKnownGood.TryGetValue(relativePath, out var lkg))
+            {
+                _logger.LogWarning("Transformation failed for '{Path}'. Serving last known good rendered version.", relativePath);
+                return lkg;
             }
 
             var etagBuilder = new StringBuilder();
@@ -219,7 +262,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 }
             }
 
-            var etagHash = ComputeMd5(etagBuilder.ToString());
+            var etagHash = ComputeHash(etagBuilder.ToString());
             var strongEtag = $"\"{etagHash}\"";
             var contentBytes = Encoding.UTF8.GetBytes(currentContent);
 
@@ -232,10 +275,9 @@ namespace Jellyfin.Plugin.Loom.Middleware
             _cache.Clear();
         }
 
-        private string ComputeMd5(string input)
+        private static string ComputeHash(string input)
         {
-            using var md5 = MD5.Create();
-            var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
             return Convert.ToHexString(hash).ToLowerInvariant();
         }
 
@@ -271,22 +313,4 @@ namespace Jellyfin.Plugin.Loom.Middleware
     }
 
     public sealed record RenderedFile(byte[] Content, string ETag, DateTimeOffset BuiltAt);
-
-    internal static class ConcurrentDictionaryExtensions
-    {
-        public static async Task<TValue> GetOrAddAsync<TKey, TValue>(
-            this ConcurrentDictionary<TKey, TValue> dictionary,
-            TKey key,
-            Func<TKey, Task<TValue>> valueFactory) where TKey : notnull
-        {
-            if (dictionary.TryGetValue(key, out var value))
-            {
-                return value;
-            }
-
-            var newValue = await valueFactory(key);
-            dictionary[key] = newValue;
-            return newValue;
-        }
-    }
 }

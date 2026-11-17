@@ -8,6 +8,10 @@ namespace Jellyfin.Plugin.Loom.Models
     {
         void Register(Newtonsoft.Json.Linq.JObject payload);
         void Update(Newtonsoft.Json.Linq.JObject payload);
+        void Register(System.Text.Json.Nodes.JsonObject payload);
+        void Update(System.Text.Json.Nodes.JsonObject payload);
+        void Register(LoomEntry entry);
+        void Update(LoomEntry entry);
     }
 
     public sealed record LoomKey(string PluginId, string TransformationName);

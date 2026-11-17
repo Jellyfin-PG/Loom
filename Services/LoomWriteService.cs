@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Nodes;
 using Newtonsoft.Json.Linq;
 using Jellyfin.Plugin.Loom.Interfaces;
 using Jellyfin.Plugin.Loom.Models;
@@ -15,7 +16,7 @@ namespace Jellyfin.Plugin.Loom.Services
             _registrar = registrar;
         }
 
-        private Guid ParseGuid(JToken? idToken)
+        private static Guid ParseGuid(JToken? idToken)
         {
             if (idToken == null)
             {
@@ -36,13 +37,33 @@ namespace Jellyfin.Plugin.Loom.Services
             }
             catch
             {
-
             }
 
             return Guid.NewGuid();
         }
 
-        public void Register(JObject payload)
+        private static Guid ParseGuid(JsonNode? idNode)
+        {
+            if (idNode == null)
+            {
+                return Guid.NewGuid();
+            }
+
+            try
+            {
+                if (Guid.TryParse(idNode.ToString(), out var parsedGuid))
+                {
+                    return parsedGuid;
+                }
+            }
+            catch
+            {
+            }
+
+            return Guid.NewGuid();
+        }
+
+        private static LoomEntry CreateEntryFromNewtonsoft(JObject payload)
         {
             var id = ParseGuid(payload["id"]);
             var fileNamePattern = payload["fileNamePattern"]?.ToString() ?? string.Empty;
@@ -60,11 +81,10 @@ namespace Jellyfin.Plugin.Loom.Services
             }
 
             var key = new LoomKey(callbackAssembly, id.ToString());
-
             var transformDelegate = LoomHelper.CreateLoomCallback(
                 callbackAssembly, callbackClass, callbackMethod);
 
-            var entry = new LoomEntry(
+            return new LoomEntry(
                 key,
                 "1.0.0",
                 targetFilePath,
@@ -73,42 +93,71 @@ namespace Jellyfin.Plugin.Loom.Services
             {
                 FileNamePattern = string.IsNullOrEmpty(fileNamePattern) ? null : fileNamePattern
             };
+        }
 
+        private static LoomEntry CreateEntryFromSystemText(JsonObject payload)
+        {
+            var id = ParseGuid(payload["id"]);
+            var fileNamePattern = payload["fileNamePattern"]?.ToString() ?? string.Empty;
+            var callbackAssembly = payload["callbackAssembly"]?.ToString() ?? string.Empty;
+            var callbackClass = payload["callbackClass"]?.ToString() ?? string.Empty;
+            var callbackMethod = payload["callbackMethod"]?.ToString() ?? string.Empty;
+
+            string targetFilePath = "index.html";
+            if (!string.IsNullOrEmpty(fileNamePattern))
+            {
+                if (!fileNamePattern.Contains("index.html") && !fileNamePattern.Contains("index\\.html"))
+                {
+                    targetFilePath = fileNamePattern;
+                }
+            }
+
+            var key = new LoomKey(callbackAssembly, id.ToString());
+            var transformDelegate = LoomHelper.CreateLoomCallback(
+                callbackAssembly, callbackClass, callbackMethod);
+
+            return new LoomEntry(
+                key,
+                "1.0.0",
+                targetFilePath,
+                100,
+                transformDelegate)
+            {
+                FileNamePattern = string.IsNullOrEmpty(fileNamePattern) ? null : fileNamePattern
+            };
+        }
+
+        public void Register(JObject payload)
+        {
+            var entry = CreateEntryFromNewtonsoft(payload);
             _registrar.Register(entry);
         }
 
         public void Update(JObject payload)
         {
-            var id = ParseGuid(payload["id"]);
-            var fileNamePattern = payload["fileNamePattern"]?.ToString() ?? string.Empty;
-            var callbackAssembly = payload["callbackAssembly"]?.ToString() ?? string.Empty;
-            var callbackClass = payload["callbackClass"]?.ToString() ?? string.Empty;
-            var callbackMethod = payload["callbackMethod"]?.ToString() ?? string.Empty;
+            var entry = CreateEntryFromNewtonsoft(payload);
+            _registrar.Update(entry);
+        }
 
-            string targetFilePath = "index.html";
-            if (!string.IsNullOrEmpty(fileNamePattern))
-            {
-                if (!fileNamePattern.Contains("index.html") && !fileNamePattern.Contains("index\\.html"))
-                {
-                    targetFilePath = fileNamePattern;
-                }
-            }
+        public void Register(JsonObject payload)
+        {
+            var entry = CreateEntryFromSystemText(payload);
+            _registrar.Register(entry);
+        }
 
-            var key = new LoomKey(callbackAssembly, id.ToString());
+        public void Update(JsonObject payload)
+        {
+            var entry = CreateEntryFromSystemText(payload);
+            _registrar.Update(entry);
+        }
 
-            var transformDelegate = LoomHelper.CreateLoomCallback(
-                callbackAssembly, callbackClass, callbackMethod);
+        public void Register(LoomEntry entry)
+        {
+            _registrar.Register(entry);
+        }
 
-            var entry = new LoomEntry(
-                key,
-                "1.0.0",
-                targetFilePath,
-                100,
-                transformDelegate)
-            {
-                FileNamePattern = string.IsNullOrEmpty(fileNamePattern) ? null : fileNamePattern
-            };
-
+        public void Update(LoomEntry entry)
+        {
             _registrar.Update(entry);
         }
     }

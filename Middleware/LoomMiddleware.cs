@@ -28,8 +28,15 @@ namespace Jellyfin.Plugin.Loom.Middleware
         private readonly ConcurrentDictionary<string, RenderedFile> _cache = new(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, RenderedFile> _lastKnownGood = new(StringComparer.OrdinalIgnoreCase);
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _compilationLocks = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, Regex> s_regexCache = new();
 
         private static readonly TimeSpan DefaultRegexTimeout = TimeSpan.FromMilliseconds(100);
+
+        private static Type? s_ftServiceType;
+        private static MethodInfo? s_ftNeedsMethod;
+        private static MethodInfo? s_ftRunMethod;
+        private static bool s_ftReflectionInitialized;
+        private static readonly object s_ftLock = new();
 
         public int CachedFilesCount => _cache.Count;
 
@@ -102,6 +109,11 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 {
                     contentType = "application/octet-stream";
                 }
+
+                // Sanitize response headers to prevent stale compression flags
+                context.Response.Headers.Remove("Content-Encoding");
+                context.Response.Headers.Remove("Last-Modified");
+                context.Response.Headers.Vary = "Accept-Encoding";
 
                 context.Response.ContentType = contentType;
                 context.Response.Headers.ETag = rendered.ETag;
@@ -186,8 +198,8 @@ namespace Jellyfin.Plugin.Loom.Middleware
                             pattern = $"(^|/){Regex.Escape(pattern)}$";
                         }
 
-                        if (Regex.IsMatch(relativePath, pattern, RegexOptions.IgnoreCase, DefaultRegexTimeout) ||
-                            Regex.IsMatch(requestPath, pattern, RegexOptions.IgnoreCase, DefaultRegexTimeout))
+                        var regex = s_regexCache.GetOrAdd(pattern, p => new Regex(p, RegexOptions.IgnoreCase | RegexOptions.Compiled, DefaultRegexTimeout));
+                        if (regex.IsMatch(relativePath) || regex.IsMatch(requestPath))
                         {
                             matches.Add(entry);
                         }
@@ -281,56 +293,79 @@ namespace Jellyfin.Plugin.Loom.Middleware
             return new RenderedFile(contentBytes, strongEtag, DateTimeOffset.UtcNow);
         }
 
+        private static void EnsureFileTransformationReflection()
+        {
+            if (s_ftReflectionInitialized)
+            {
+                return;
+            }
+
+            lock (s_ftLock)
+            {
+                if (s_ftReflectionInitialized)
+                {
+                    return;
+                }
+
+                try
+                {
+                    s_ftServiceType = Type.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService, Jellyfin.Plugin.FileTransformation")
+                        ?? AppDomain.CurrentDomain.GetAssemblies()
+                            .Select(a => a.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService"))
+                            .FirstOrDefault(t => t != null);
+
+                    if (s_ftServiceType == null)
+                    {
+                        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                        {
+                            var matchingType = assembly.GetTypes().FirstOrDefault(t => t.Name == "IWebFileTransformationReadService" || t.Name == "WebFileTransformationService");
+                            if (matchingType != null)
+                            {
+                                s_ftServiceType = matchingType;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (s_ftServiceType != null)
+                    {
+                        s_ftNeedsMethod = s_ftServiceType.GetMethod("NeedsTransformation", new[] { typeof(string) });
+                        s_ftRunMethod = s_ftServiceType.GetMethod("RunTransformation", new[] { typeof(string), typeof(Stream) });
+                    }
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    s_ftReflectionInitialized = true;
+                }
+            }
+        }
+
         private bool CheckIfFileTransformationNeedsPath(HttpContext context, string relativePath)
         {
             try
             {
+                EnsureFileTransformationReflection();
+                if (s_ftServiceType == null || s_ftNeedsMethod == null)
+                {
+                    return false;
+                }
+
                 var sp = context.RequestServices ?? Plugin.Instance?.ServiceProvider;
                 if (sp == null)
                 {
                     return false;
                 }
 
-                // Check for IWebFileTransformationReadService via reflection without compile-time coupling
-                var ftServiceType = Type.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService, Jellyfin.Plugin.FileTransformation")
-                    ?? AppDomain.CurrentDomain.GetAssemblies()
-                        .Select(a => a.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService"))
-                        .FirstOrDefault(t => t != null);
-
-                object? ftService = null;
-                MethodInfo? needsMethod = null;
-
-                if (ftServiceType != null)
-                {
-                    ftService = sp.GetService(ftServiceType);
-                    needsMethod = ftServiceType.GetMethod("NeedsTransformation", new[] { typeof(string) });
-                }
-
-                // If not found via loaded types, query DI for any service with type name containing IWebFileTransformationReadService
+                var ftService = sp.GetService(s_ftServiceType);
                 if (ftService == null)
-                {
-                    // Fall back to scanning loaded assemblies or checking DI
-                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                    {
-                        var matchingType = assembly.GetTypes().FirstOrDefault(t => t.Name == "IWebFileTransformationReadService" || t.Name == "WebFileTransformationService");
-                        if (matchingType != null)
-                        {
-                            ftService = sp.GetService(matchingType);
-                            if (ftService != null)
-                            {
-                                needsMethod = ftService.GetType().GetMethod("NeedsTransformation", new[] { typeof(string) });
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (ftService == null || needsMethod == null)
                 {
                     return false;
                 }
 
-                return needsMethod.Invoke(ftService, new object[] { relativePath }) as bool? ?? false;
+                return s_ftNeedsMethod.Invoke(ftService, new object[] { relativePath }) as bool? ?? false;
             }
             catch (Exception ex)
             {
@@ -343,44 +378,20 @@ namespace Jellyfin.Plugin.Loom.Middleware
         {
             try
             {
+                EnsureFileTransformationReflection();
+                if (s_ftServiceType == null || s_ftRunMethod == null)
+                {
+                    return content;
+                }
+
                 var sp = context.RequestServices ?? Plugin.Instance?.ServiceProvider;
                 if (sp == null)
                 {
                     return content;
                 }
 
-                var ftServiceType = Type.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService, Jellyfin.Plugin.FileTransformation")
-                    ?? AppDomain.CurrentDomain.GetAssemblies()
-                        .Select(a => a.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService"))
-                        .FirstOrDefault(t => t != null);
-
-                object? ftService = null;
-                MethodInfo? runMethod = null;
-
-                if (ftServiceType != null)
-                {
-                    ftService = sp.GetService(ftServiceType);
-                    runMethod = ftServiceType.GetMethod("RunTransformation", new[] { typeof(string), typeof(Stream) });
-                }
-
+                var ftService = sp.GetService(s_ftServiceType);
                 if (ftService == null)
-                {
-                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-                    {
-                        var matchingType = assembly.GetTypes().FirstOrDefault(t => t.Name == "IWebFileTransformationReadService" || t.Name == "WebFileTransformationService");
-                        if (matchingType != null)
-                        {
-                            ftService = sp.GetService(matchingType);
-                            if (ftService != null)
-                            {
-                                runMethod = ftService.GetType().GetMethod("RunTransformation", new[] { typeof(string), typeof(Stream) });
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (ftService == null || runMethod == null)
                 {
                     return content;
                 }
@@ -389,7 +400,7 @@ namespace Jellyfin.Plugin.Loom.Middleware
                 await ms.WriteAsync(content).ConfigureAwait(false);
                 ms.Seek(0, SeekOrigin.Begin);
 
-                var task = runMethod.Invoke(ftService, new object[] { relativePath, ms }) as Task;
+                var task = s_ftRunMethod.Invoke(ftService, new object[] { relativePath, ms }) as Task;
                 if (task != null)
                 {
                     await task.ConfigureAwait(false);

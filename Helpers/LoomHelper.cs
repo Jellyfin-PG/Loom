@@ -36,6 +36,9 @@ namespace Jellyfin.Plugin.Loom.Helpers
 
                 var parameters = method.GetParameters();
                 object?[] args;
+                object? paramInstance = null;
+                PropertyInfo? prop = null;
+
                 if (parameters.Length == 0)
                 {
                     args = Array.Empty<object>();
@@ -49,10 +52,10 @@ namespace Jellyfin.Plugin.Loom.Helpers
                     }
                     else
                     {
-                        var paramInstance = Activator.CreateInstance(paramType)
+                        paramInstance = Activator.CreateInstance(paramType)
                             ?? throw new InvalidOperationException($"Could not instantiate parameter type '{paramType.FullName}'");
 
-                        var prop = paramType.GetProperty("Contents", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+                        prop = paramType.GetProperty("Contents", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
                             ?? paramType.GetProperty("contents", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                         if (prop != null && prop.CanWrite)
@@ -76,6 +79,20 @@ namespace Jellyfin.Plugin.Loom.Helpers
                 {
                     return str;
                 }
+                if (invokeResult is Task nonGenericTask)
+                {
+                    await nonGenericTask;
+                }
+
+                // If callback modified parameter object in place, extract updated content
+                if (paramInstance != null && prop != null)
+                {
+                    if (prop.GetValue(paramInstance) is string updated)
+                    {
+                        return updated;
+                    }
+                }
+
                 return context.Content;
             };
         }

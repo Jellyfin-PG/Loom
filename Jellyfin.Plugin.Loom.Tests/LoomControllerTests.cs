@@ -219,6 +219,7 @@ namespace Jellyfin.Plugin.Loom.Tests
             // Verify System.Text.Json serialization succeeds without ambiguous parameter binding exceptions
             var json = System.Text.Json.JsonSerializer.Serialize(diag);
             Assert.Contains("\"IsStartupComplete\":true", json);
+            Assert.Contains("\"IsCoexistenceActive\":", json);
         }
     }
 }

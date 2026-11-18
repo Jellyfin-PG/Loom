@@ -303,6 +303,10 @@
                 <div class="loom-card-title">Startup Barrier</div>
                 <div id="statStartup" class="loom-card-val" style="font-size: 1.5rem; color: #90caf9;">Ready</div>
             </div>
+            <div class="loom-card">
+                <div class="loom-card-title">Coexistence</div>
+                <div id="statCoexistence" class="loom-card-val" style="font-size: 1.5rem; color: #90caf9;">Standalone</div>
+            </div>
         </div>
 
         <div class="loom-actions" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
@@ -360,11 +364,29 @@
                         statStartup.innerText = 'Waiting';
                         statStartup.style.color = 'rgb(255, 183, 77)';
                     }
+
+                    var statCoexistence = page.querySelector('#statCoexistence');
+                    if (statCoexistence) {
+                        var isCoexistence = data && (data.isCoexistenceActive !== undefined ? data.isCoexistenceActive : data.IsCoexistenceActive);
+                        if (isCoexistence) {
+                            statCoexistence.innerText = 'Active';
+                            statCoexistence.style.color = 'rgb(165, 215, 167)';
+                        } else {
+                            statCoexistence.innerText = 'Standalone';
+                            statCoexistence.style.color = '#90caf9';
+                        }
+                    }
                 }).catch(function (err) {
                     console.error("Failed to load diagnostics", err);
                     var statStartup = page.querySelector('#statStartup');
                     statStartup.innerText = 'Cleared';
                     statStartup.style.color = 'rgb(165, 215, 167)';
+
+                    var statCoexistence = page.querySelector('#statCoexistence');
+                    if (statCoexistence) {
+                        statCoexistence.innerText = 'Standalone';
+                        statCoexistence.style.color = '#90caf9';
+                    }
                 });
             }
 

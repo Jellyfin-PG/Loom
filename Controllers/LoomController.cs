@@ -193,11 +193,13 @@ namespace Jellyfin.Plugin.Loom.Controllers
             var config = Plugin.Instance?.Configuration;
             var isComplete = _startupBarrier?.IsComplete ?? true;
             var timeout = config?.StartupTimeoutSeconds ?? 10;
+            var isCoexistenceActive = CheckFileTransformationPresent();
 
             return Ok(new LoomDiagnosticsResult
             {
                 ContractVersion = "1.0.0",
                 IsStartupComplete = isComplete,
+                IsCoexistenceActive = isCoexistenceActive,
                 StartupTimeoutSeconds = timeout,
                 TotalRules = list.Count,
                 HealthyRules = list.Count(e => e.Status == LoomStatus.Healthy),
@@ -206,12 +208,39 @@ namespace Jellyfin.Plugin.Loom.Controllers
                 ServerTime = DateTimeOffset.UtcNow
             });
         }
+
+        private static bool CheckFileTransformationPresent()
+        {
+            try
+            {
+                var ftServiceType = Type.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService, Jellyfin.Plugin.FileTransformation")
+                    ?? AppDomain.CurrentDomain.GetAssemblies()
+                        .Select(a => a.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService"))
+                        .FirstOrDefault(t => t != null);
+
+                if (ftServiceType != null)
+                {
+                    var sp = Plugin.Instance?.ServiceProvider;
+                    if (sp != null && sp.GetService(ftServiceType) != null)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 
     public class LoomDiagnosticsResult
     {
         public string ContractVersion { get; set; } = "1.0.0";
         public bool IsStartupComplete { get; set; }
+        public bool IsCoexistenceActive { get; set; }
         public int StartupTimeoutSeconds { get; set; }
         public int TotalRules { get; set; }
         public int HealthyRules { get; set; }

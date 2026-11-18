@@ -111,5 +111,52 @@ namespace Jellyfin.Plugin.Loom.Tests
             Assert.Single(list);
             Assert.Equal(50, list.First().Priority);
         }
+
+        [Fact]
+        public async Task CreateLoomCallback_SupportsInPlaceMutatingVoidCallback()
+        {
+            var callback = Helpers.LoomHelper.CreateLoomCallback(
+                typeof(TestCallbackTargets).Assembly.GetName().Name!,
+                typeof(TestCallbackTargets).FullName!,
+                nameof(TestCallbackTargets.MutateInPlaceVoid));
+
+            var context = new LoomContext("index.html", "InitialContent");
+            var result = await callback(context);
+
+            Assert.Equal("InitialContent_MutatedInPlace", result);
+        }
+
+        [Fact]
+        public async Task CreateLoomCallback_SupportsInPlaceMutatingTaskCallback()
+        {
+            var callback = Helpers.LoomHelper.CreateLoomCallback(
+                typeof(TestCallbackTargets).Assembly.GetName().Name!,
+                typeof(TestCallbackTargets).FullName!,
+                nameof(TestCallbackTargets.MutateInPlaceTask));
+
+            var context = new LoomContext("index.html", "InitialContent");
+            var result = await callback(context);
+
+            Assert.Equal("InitialContent_MutatedInPlaceAsync", result);
+        }
+    }
+
+    public static class TestCallbackTargets
+    {
+        public class ContextWithContentsProperty
+        {
+            public string Contents { get; set; } = string.Empty;
+        }
+
+        public static void MutateInPlaceVoid(ContextWithContentsProperty ctx)
+        {
+            ctx.Contents += "_MutatedInPlace";
+        }
+
+        public static Task MutateInPlaceTask(ContextWithContentsProperty ctx)
+        {
+            ctx.Contents += "_MutatedInPlaceAsync";
+            return Task.CompletedTask;
+        }
     }
 }

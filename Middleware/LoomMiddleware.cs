@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
@@ -104,9 +105,20 @@ namespace Jellyfin.Plugin.Loom.Middleware
 
                 context.Response.ContentType = contentType;
                 context.Response.Headers.ETag = rendered.ETag;
-                context.Response.ContentLength = rendered.Content.Length;
+                context.Response.StatusCode = StatusCodes.Status200OK;
 
-                await context.Response.Body.WriteAsync(rendered.Content);
+                // When FileTransformation is upstream in the pipeline, context.Response.Body is already a buffered seekable stream
+                // (e.g. MemoryStream). Loom simply writes rendered content into it and returns; FileTransformation will then
+                // run its own transformations on that buffer on the way back up.
+                // If FileTransformation is installed but downstream (non-seekable stream), apply its transformations directly.
+                byte[] finalContent = rendered.Content;
+                if (!context.Response.Body.CanSeek && CheckIfFileTransformationNeedsPath(context, relativePath))
+                {
+                    finalContent = await ApplyFileTransformationAsync(context, relativePath, finalContent).ConfigureAwait(false);
+                }
+
+                context.Response.ContentLength = finalContent.Length;
+                await context.Response.Body.WriteAsync(finalContent).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -267,6 +279,130 @@ namespace Jellyfin.Plugin.Loom.Middleware
             var contentBytes = Encoding.UTF8.GetBytes(currentContent);
 
             return new RenderedFile(contentBytes, strongEtag, DateTimeOffset.UtcNow);
+        }
+
+        private bool CheckIfFileTransformationNeedsPath(HttpContext context, string relativePath)
+        {
+            try
+            {
+                var sp = context.RequestServices ?? Plugin.Instance?.ServiceProvider;
+                if (sp == null)
+                {
+                    return false;
+                }
+
+                // Check for IWebFileTransformationReadService via reflection without compile-time coupling
+                var ftServiceType = Type.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService, Jellyfin.Plugin.FileTransformation")
+                    ?? AppDomain.CurrentDomain.GetAssemblies()
+                        .Select(a => a.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService"))
+                        .FirstOrDefault(t => t != null);
+
+                object? ftService = null;
+                MethodInfo? needsMethod = null;
+
+                if (ftServiceType != null)
+                {
+                    ftService = sp.GetService(ftServiceType);
+                    needsMethod = ftServiceType.GetMethod("NeedsTransformation", new[] { typeof(string) });
+                }
+
+                // If not found via loaded types, query DI for any service with type name containing IWebFileTransformationReadService
+                if (ftService == null)
+                {
+                    // Fall back to scanning loaded assemblies or checking DI
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        var matchingType = assembly.GetTypes().FirstOrDefault(t => t.Name == "IWebFileTransformationReadService" || t.Name == "WebFileTransformationService");
+                        if (matchingType != null)
+                        {
+                            ftService = sp.GetService(matchingType);
+                            if (ftService != null)
+                            {
+                                needsMethod = ftService.GetType().GetMethod("NeedsTransformation", new[] { typeof(string) });
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (ftService == null || needsMethod == null)
+                {
+                    return false;
+                }
+
+                return needsMethod.Invoke(ftService, new object[] { relativePath }) as bool? ?? false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Could not check FileTransformation coexistence for path '{Path}'", relativePath);
+                return false;
+            }
+        }
+
+        private async Task<byte[]> ApplyFileTransformationAsync(HttpContext context, string relativePath, byte[] content)
+        {
+            try
+            {
+                var sp = context.RequestServices ?? Plugin.Instance?.ServiceProvider;
+                if (sp == null)
+                {
+                    return content;
+                }
+
+                var ftServiceType = Type.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService, Jellyfin.Plugin.FileTransformation")
+                    ?? AppDomain.CurrentDomain.GetAssemblies()
+                        .Select(a => a.GetType("Jellyfin.Plugin.FileTransformation.Library.IWebFileTransformationReadService"))
+                        .FirstOrDefault(t => t != null);
+
+                object? ftService = null;
+                MethodInfo? runMethod = null;
+
+                if (ftServiceType != null)
+                {
+                    ftService = sp.GetService(ftServiceType);
+                    runMethod = ftServiceType.GetMethod("RunTransformation", new[] { typeof(string), typeof(Stream) });
+                }
+
+                if (ftService == null)
+                {
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        var matchingType = assembly.GetTypes().FirstOrDefault(t => t.Name == "IWebFileTransformationReadService" || t.Name == "WebFileTransformationService");
+                        if (matchingType != null)
+                        {
+                            ftService = sp.GetService(matchingType);
+                            if (ftService != null)
+                            {
+                                runMethod = ftService.GetType().GetMethod("RunTransformation", new[] { typeof(string), typeof(Stream) });
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (ftService == null || runMethod == null)
+                {
+                    return content;
+                }
+
+                using var ms = new MemoryStream();
+                await ms.WriteAsync(content).ConfigureAwait(false);
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var task = runMethod.Invoke(ftService, new object[] { relativePath, ms }) as Task;
+                if (task != null)
+                {
+                    await task.ConfigureAwait(false);
+                    return ms.ToArray();
+                }
+
+                return content;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to apply FileTransformation downstream transformation for '{Path}'", relativePath);
+                return content;
+            }
         }
 
         private void InvalidateCache(string path)

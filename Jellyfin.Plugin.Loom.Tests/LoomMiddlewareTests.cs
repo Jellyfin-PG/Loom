@@ -276,5 +276,152 @@ namespace Jellyfin.Plugin.Loom.Tests
 
             Assert.True(nextCalled);
         }
+
+        [Fact]
+        public async Task InvokeAsync_CoexistenceWithUpstreamFileTransformation_ShouldWriteToBufferWithoutCallingNext()
+        {
+            var registrar = new LoomRegistrar();
+            var appPaths = new TestAppPaths(_tempWebDir);
+            var logger = new TestLogger<LoomMiddleware>();
+
+            var startedSource = new CancellationTokenSource();
+            var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
+            var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
+
+            var key = new LoomKey("TestPlugin", "Rule1");
+            var entry = new LoomEntry(key, "1.0", "index.html", 100, ctx => Task.FromResult(ctx.Content.Replace("Original", "LoomModified")));
+            registrar.Register(entry);
+
+            startedSource.Cancel();
+
+            // Next middleware in ASP.NET pipeline (e.g. StaticFileMiddleware) should NEVER be called
+            // when Loom generates the response, to prevent overwriting the transformed buffer with disk contents.
+            bool nextCalled = false;
+            RequestDelegate next = ctx =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            };
+
+            var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
+
+            // Upstream FileTransformationMiddleware buffers the response body using a MemoryStream.
+            var fakeFtService = new FakeFtReadService();
+            var serviceProvider = new FakeServiceProvider(fakeFtService);
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.RequestServices = serviceProvider;
+            var responseBody = new MemoryStream();
+            httpContext.Response.Body = responseBody;
+            httpContext.Request.Path = "/web/index.html";
+
+            await middleware.InvokeAsync(httpContext);
+
+            Assert.False(nextCalled);
+            Assert.Equal(StatusCodes.Status200OK, httpContext.Response.StatusCode);
+            var finalOutput = Encoding.UTF8.GetString(responseBody.ToArray());
+            Assert.Contains("LoomModified", finalOutput);
+        }
+
+        [Fact]
+        public async Task InvokeAsync_CoexistenceWithDownstreamFileTransformation_ShouldApplyTransformations()
+        {
+            var registrar = new LoomRegistrar();
+            var appPaths = new TestAppPaths(_tempWebDir);
+            var logger = new TestLogger<LoomMiddleware>();
+
+            var startedSource = new CancellationTokenSource();
+            var lifetime = new TestLifetime { ApplicationStarted = startedSource.Token };
+            var barrier = new StartupBarrier(lifetime, new TestLogger<StartupBarrier>());
+
+            var key = new LoomKey("TestPlugin", "Rule1");
+            var entry = new LoomEntry(key, "1.0", "index.html", 100, ctx => Task.FromResult(ctx.Content.Replace("Original", "LoomModified")));
+            registrar.Register(entry);
+
+            startedSource.Cancel();
+
+            bool nextCalled = false;
+            RequestDelegate next = ctx =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            };
+
+            var middleware = new LoomMiddleware(next, registrar, appPaths, logger, barrier);
+
+            var fakeFtService = new FakeFtReadService();
+            var serviceProvider = new FakeServiceProvider(fakeFtService);
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.RequestServices = serviceProvider;
+            // Use a non-seekable stream to simulate a downstream scenario where FileTransformation has not wrapped Body
+            using var backingStream = new MemoryStream();
+            var nonSeekableStream = new NonSeekableStream(backingStream);
+            httpContext.Response.Body = nonSeekableStream;
+            httpContext.Request.Path = "/web/index.html";
+
+            await middleware.InvokeAsync(httpContext);
+
+            Assert.False(nextCalled);
+            Assert.Equal(StatusCodes.Status200OK, httpContext.Response.StatusCode);
+            var finalOutput = Encoding.UTF8.GetString(backingStream.ToArray());
+            Assert.Contains("LoomModified_And_DownstreamFtModified", finalOutput);
+        }
+
+        private class NonSeekableStream : Stream
+        {
+            private readonly Stream _inner;
+            public NonSeekableStream(Stream inner) => _inner = inner;
+            public override bool CanRead => false;
+            public override bool CanSeek => false;
+            public override bool CanWrite => true;
+            public override long Length => throw new NotSupportedException();
+            public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+            public override void Flush() => _inner.Flush();
+            public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+            public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => _inner.Write(buffer, offset, count);
+            public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => _inner.WriteAsync(buffer, offset, count, cancellationToken);
+            public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) => _inner.WriteAsync(buffer, cancellationToken);
+        }
+
+        private interface IWebFileTransformationReadService
+        {
+            bool NeedsTransformation(string path);
+            Task RunTransformation(string path, Stream stream);
+        }
+
+        private class FakeFtReadService : IWebFileTransformationReadService
+        {
+            public bool NeedsTransformation(string path) => path.Contains("index.html");
+
+            public async Task RunTransformation(string path, Stream stream)
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                using var reader = new StreamReader(stream, leaveOpen: true);
+                var text = await reader.ReadToEndAsync();
+                var transformed = text.Replace("LoomModified", "LoomModified_And_DownstreamFtModified");
+                stream.SetLength(0);
+                using var writer = new StreamWriter(stream, leaveOpen: true);
+                await writer.WriteAsync(transformed);
+                await writer.FlushAsync();
+            }
+        }
+
+        private class FakeServiceProvider : IServiceProvider
+        {
+            private readonly object _service;
+            public FakeServiceProvider(object service) => _service = service;
+
+            public object? GetService(Type serviceType)
+            {
+                if (serviceType.Name.Contains("IWebFileTransformationReadService"))
+                {
+                    return _service;
+                }
+                return null;
+            }
+        }
     }
 }

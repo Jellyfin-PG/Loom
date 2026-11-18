@@ -119,6 +119,11 @@ namespace Jellyfin.Plugin.Loom
             }
         }
 
+        /// <summary>
+        /// Compatibility alias for FileTransformation.PluginInterface.RemoveTransformation.
+        /// </summary>
+        public static void RemoveTransformation(Guid id) => DeregisterTransformation(id);
+
         public static void DeregisterTransformation(string pluginId, string transformationName)
         {
             var plugin = Plugin.Instance;
